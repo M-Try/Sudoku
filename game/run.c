@@ -59,7 +59,7 @@ void reset_render_bg_fg() {
 }
 
 void sudoku_render_board(sudoku_board *board) {
-    uint8_t box_size = sqrt(SUDOKU_SIZE);
+    uint8_t box_size = sudoku_get_box_len();
     printf("  ");
     for (uint8_t r = 1; r <= SUDOKU_SIZE; r++) {
         printf("%d", r); // TODO: for larger r this should produce an alphabetic value
@@ -99,13 +99,7 @@ void sudoku_render_board(sudoku_board *board) {
     }
 }
 
-int main(int argc, char const *argv[]) {
-    sudoku_board *board;
-    uint8_t x;
-    uint8_t y;
-    uint8_t val;
-    int collapse_retval;
-
+void game_initialise(void) {
     // initialise the windows console handling also save attributes to restore later
     initialise_con_handler();
 
@@ -113,14 +107,28 @@ int main(int argc, char const *argv[]) {
     printf("--- Sudoku Game ---\n");
     printf("Compiled at %s on %s\n\n", __TIME__, __DATE__);
 
-    // create board
-    printf("Creating new sudoku board... ");
+    // create new board
     board = new_sudoku_board();
     if (board == NULL) {
         printf("Error: cannot create sudoku board (ALLOCATION_FAILURE)\n");
         return EXIT_FAILURE;
     }
-    printf("Done.\n\n");
+}
+
+void game_exit(void) {
+    reset_render_bg_fg();
+    free(board);
+}
+
+sudoku_board *board;
+
+int main(int argc, char const *argv[]) {
+    uint8_t x;
+    uint8_t y;
+    uint8_t val;
+    int collapse_retval;
+
+    game_initialise();
 
     // add constraints to the board
     for (size_t i = 0; i < NUM_CONSTRAINTS; i++) {
@@ -152,9 +160,8 @@ int main(int argc, char const *argv[]) {
     }
 
     printf("Goodbye.\n");
-    reset_render_bg_fg();
-    free(board);
     free(prompt);
+    game_exit();
 
     return EXIT_SUCCESS;
 }

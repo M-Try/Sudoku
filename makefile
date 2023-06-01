@@ -6,6 +6,7 @@ OBJS:=sudoku.o
 TARGET_LIBSTATIC:=$(BIN)/libsudoku.a
 TARGET_LIBDYNAMIC:=$(BIN)/sudoku.so
 TARGET_GAME:=Sudoku.exe
+RM:=del
 
 default: lib_static
 
@@ -28,9 +29,9 @@ $(TARGET_GAME): $(TARGET_LIBSTATIC)
 	$(CC) $(CFLAGS) -c $^ -o $@
 
 clean:
-	-rm $(TARGET_GAME)
-	-rm $(TARGET_LIBSTATIC)
-	-rm $(TARGET_LIBDYNAMIC)
-	-rm $(OBJS)
+	-@$(RM) $(TARGET_GAME)
+	-@$(RM) $(TARGET_LIBSTATIC)
+	-@$(RM) $(TARGET_LIBDYNAMIC)
+	-@$(RM) $(OBJS)
 
 .PHONY: default lib_dynamic lib_static game clean
