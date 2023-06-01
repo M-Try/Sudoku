@@ -57,14 +57,20 @@ sudoku_coord sudoku_blame_exclusion(sudoku_board *board, sudoku_num_t i, sudoku_
 
 // collapses a tile that doesnt have a real "definite" value, using a single "stable" superposition, by finding out if there is one and collapsing down to it
 void sudoku_collapse_from_stable_superposition_to_definite(sudoku_board *board, sudoku_num_t i, sudoku_num_t j) {
-    if (board->tiles[i][j].definite_val == 0) {
-        for (sudoku_num_t p = 0; p < SUDOKU_SIZE; p++) {
-            if (board->tiles[i][j].superpos[p]) {
-                board->tiles[i][j].definite_val = p + 1;
-                break;
+    if (board->tiles[i][j].definite_val != 0) return;
+
+    int stable_superpos = 0;
+    for (sudoku_num_t p = 0; p < SUDOKU_SIZE; p++) {
+        if (board->tiles[i][j].superpos[p]) {
+            if (stable_superpos != 0) {
+                return; // abort, because there is more than one superpos
             }
+
+            stable_superpos = p + 1;
         }
     }
+
+    board->tiles[i][j].definite_val = stable_superpos;
 }
 
 
@@ -140,18 +146,15 @@ bool sudoku_is_val_allowed_for_tile(sudoku_board *board, sudoku_coord coord, sud
 collapse_return_code sudoku_collapse_tile(sudoku_board *board, sudoku_coord coord, sudoku_num_t val) {
     if (val > SUDOKU_SIZE || val == 0) return OUT_OF_RANGE;
     if (board->tiles[coord.x][coord.y].superpos[val - 1] == false) return WRONG_VALUE;
+    if (board->tiles[coord.x][coord.y].constraint == true) return CONST_POS;
 
     sudoku_num_t box_size = sudoku_get_box_len();
-    sudoku_num_t x_box_offset = coord.x / box_size;
-    sudoku_num_t y_box_offset = coord.y / box_size;
+    sudoku_num_t x_box_offset = sudoku_get_box_i(coord.x);
+    sudoku_num_t y_box_offset = sudoku_get_box_i(coord.y);
 
     sudoku_num_t current_tile_value = board->tiles[coord.x][coord.y].definite_val;
 
     if (current_tile_value != 0) { // modifying a tile
-        if (board->tiles[coord.x][coord.y].constraint == true) {
-            return CONST_POS;
-        }
-
         board->tiles[coord.x][coord.y].definite_val = 0; // quickly suspend our disbelief for a second. this is necessary to perform superpos legitimacy checking
 
         for (sudoku_num_t i = 0; i < box_size; i++) {
@@ -176,7 +179,6 @@ collapse_return_code sudoku_collapse_tile(sudoku_board *board, sudoku_coord coor
     }
 
     board->tiles[coord.x][coord.y].definite_val = val;
-    printf("Tile has been collapsed\n");
 
     for (sudoku_num_t i = 0; i < box_size; i++) {
         for (sudoku_num_t j = 0; j < box_size; j++) {
